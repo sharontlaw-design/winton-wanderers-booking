@@ -15,10 +15,12 @@ export default function BookingDetailClient({
   booking,
   message,
   receipt,
+  paymentPending,
 }: {
   booking: BookingWithSite
   message: string
   receipt: string
+  paymentPending: boolean
 }) {
   const router = useRouter()
   const [depositAmount, setDepositAmount] = useState(booking.deposit_amount)
@@ -103,6 +105,9 @@ export default function BookingDetailClient({
               {savingDeposit ? 'Saving...' : 'Save'}
             </button>
           </div>
+          {booking.paid_at && (
+            <p className="text-xs text-emerald-700 mt-1">Paid online {new Date(booking.paid_at).toLocaleString()}</p>
+          )}
         </div>
       </div>
 
@@ -128,6 +133,7 @@ export default function BookingDetailClient({
         endpoint={`/api/bookings/${booking.id}/message`}
         alreadySentAt={booking.message_sent_at}
         phone={booking.phone}
+        caption={paymentPending ? 'A fresh payment link is created each time this is sent, so it never goes out expired.' : undefined}
       />
 
       <SendPanel
@@ -173,12 +179,14 @@ function SendPanel({
   endpoint,
   alreadySentAt,
   phone,
+  caption,
 }: {
   title: string
   text: string
   endpoint: string
   alreadySentAt: string | null
   phone: string
+  caption?: string
 }) {
   const router = useRouter()
   const [sending, setSending] = useState(false)
@@ -209,6 +217,7 @@ function SendPanel({
         {alreadySentAt && <span className="text-xs text-slate-400">Sent {new Date(alreadySentAt).toLocaleString()}</span>}
       </div>
       <pre className="whitespace-pre-wrap text-sm text-slate-700 bg-slate-50 rounded-md p-3 mb-3 font-sans">{text}</pre>
+      {caption && <p className="text-xs text-slate-400 mb-3">{caption}</p>}
       <div className="flex items-center gap-3">
         <button
           onClick={send}

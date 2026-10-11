@@ -15,6 +15,11 @@ the confirmation text and receipt ready to send.
   text for a booking. If a Twilio number is configured it sends the text
   directly; otherwise it copies the message to your clipboard so you can
   paste it into a normal text message.
+- **Card deposits (optional)** — if Stripe is configured, the confirmation
+  text includes a secure payment link instead of asking the guest to pay
+  over the phone. Once they pay, the booking is marked paid and the receipt
+  is sent automatically — no action needed. Without Stripe set up, deposits
+  stay exactly as manual as before.
 
 Not yet built (Phase 2): automatically pulling in bookings from email and
 incoming texts. That needs a Twilio number and some email forwarding setup —
@@ -64,7 +69,31 @@ size, etc.) — it works with the defaults in the meantime.
 3. Redeploy. The Send buttons will now actually send the text instead of
    copying it to the clipboard.
 
+### Taking deposits by card (optional — Stripe charges roughly 1.75% + $0.30 per transaction in Australia, nothing upfront)
+
+1. Sign up free at https://stripe.com and finish their business verification
+   (needed before Stripe will pay out to a real bank account).
+2. In Stripe's Dashboard → Developers → API keys, copy the **secret key**
+   into `STRIPE_SECRET_KEY`.
+3. Once deployed, in Stripe's Dashboard → Developers → Webhooks, add an
+   endpoint for `https://<your-deployed-url>/api/stripe/webhook`, listening
+   for the `checkout.session.completed` event. Copy the **signing secret**
+   it gives you into `STRIPE_WEBHOOK_SECRET`.
+4. Set `APP_BASE_URL` to your real deployed URL (e.g.
+   `https://winton-wanderers.vercel.app`).
+5. In Stripe's Dashboard → Settings → Payouts, set the payout schedule to
+   **daily** so takings land in the bank account automatically each day —
+   that's a Stripe setting, nothing to configure here.
+6. Redeploy. New confirmation messages now include a secure payment link
+   when a deposit is still owing.
+
+Reconciling those daily payouts in accounting software (e.g. Xero) is a
+separate, later decision — Xero charges its own ongoing subscription, so
+it's not assumed here. When that's wanted, connecting Stripe to Xero's bank
+feed is a standard Xero/Stripe setting, not something this app needs to do.
+
 ## What's recorded per booking
 
 Name, phone number, vehicle rego, site, check-in/check-out dates, deposit
-amount paid, any notes, and status (booked / checked in / checked out).
+amount paid, any notes, status (booked / checked in / checked out), and —
+if paid by card — when it was paid.

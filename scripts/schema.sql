@@ -25,7 +25,16 @@ CREATE TABLE IF NOT EXISTS bookings (
   status TEXT NOT NULL DEFAULT 'booked', -- 'booked' | 'checked_in' | 'checked_out' | 'cancelled'
   message_sent_at TIMESTAMPTZ,
   receipt_sent_at TIMESTAMPTZ,
+  stripe_session_id TEXT,
+  stripe_checkout_url TEXT,
+  paid_at TIMESTAMPTZ, -- set by the Stripe webhook once the deposit is paid online
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ALTER ... ADD COLUMN IF NOT EXISTS so this stays safe to re-run against a
+-- database that already had the bookings table from before these columns existed.
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS stripe_session_id TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS stripe_checkout_url TEXT;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS bookings_site_dates_idx ON bookings (site_id, check_in, check_out) WHERE status <> 'cancelled';

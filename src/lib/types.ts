@@ -26,6 +26,9 @@ export type Booking = {
   status: BookingStatus
   message_sent_at: string | null
   receipt_sent_at: string | null
+  stripe_session_id: string | null
+  stripe_checkout_url: string | null
+  paid_at: string | null
   created_at: string
 }
 

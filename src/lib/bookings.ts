@@ -24,7 +24,8 @@ export async function createBooking(b: NewBooking): Promise<Booking> {
     RETURNING id, guest_name, phone, rego, site_id,
       to_char(check_in, 'YYYY-MM-DD') AS check_in,
       to_char(check_out, 'YYYY-MM-DD') AS check_out,
-      nuances, deposit_amount, status, message_sent_at, receipt_sent_at, created_at
+      nuances, deposit_amount, status, message_sent_at, receipt_sent_at,
+      stripe_session_id, stripe_checkout_url, paid_at, created_at
   `
   return rows[0] as Booking
 }
@@ -35,7 +36,8 @@ export async function listBookings(): Promise<BookingWithSite[]> {
       to_char(b.check_in, 'YYYY-MM-DD') AS check_in,
       to_char(b.check_out, 'YYYY-MM-DD') AS check_out,
       b.nuances, b.deposit_amount, b.status,
-      b.message_sent_at, b.receipt_sent_at, b.created_at,
+      b.message_sent_at, b.receipt_sent_at,
+      b.stripe_session_id, b.stripe_checkout_url, b.paid_at, b.created_at,
       s.number AS site_number
     FROM bookings b
     LEFT JOIN sites s ON s.id = b.site_id
@@ -52,7 +54,8 @@ export async function listActiveToday(): Promise<BookingWithSite[]> {
       to_char(b.check_in, 'YYYY-MM-DD') AS check_in,
       to_char(b.check_out, 'YYYY-MM-DD') AS check_out,
       b.nuances, b.deposit_amount, b.status,
-      b.message_sent_at, b.receipt_sent_at, b.created_at,
+      b.message_sent_at, b.receipt_sent_at,
+      b.stripe_session_id, b.stripe_checkout_url, b.paid_at, b.created_at,
       s.number AS site_number
     FROM bookings b
     LEFT JOIN sites s ON s.id = b.site_id
@@ -69,7 +72,8 @@ export async function getBooking(id: number): Promise<BookingWithSite | null> {
       to_char(b.check_in, 'YYYY-MM-DD') AS check_in,
       to_char(b.check_out, 'YYYY-MM-DD') AS check_out,
       b.nuances, b.deposit_amount, b.status,
-      b.message_sent_at, b.receipt_sent_at, b.created_at,
+      b.message_sent_at, b.receipt_sent_at,
+      b.stripe_session_id, b.stripe_checkout_url, b.paid_at, b.created_at,
       s.number AS site_number
     FROM bookings b
     LEFT JOIN sites s ON s.id = b.site_id
@@ -92,4 +96,15 @@ export async function markMessageSent(id: number): Promise<void> {
 
 export async function markReceiptSent(id: number): Promise<void> {
   await sql`UPDATE bookings SET receipt_sent_at = now() WHERE id = ${id}`
+}
+
+export async function setStripeSession(id: number, sessionId: string, checkoutUrl: string): Promise<void> {
+  await sql`UPDATE bookings SET stripe_session_id = ${sessionId}, stripe_checkout_url = ${checkoutUrl} WHERE id = ${id}`
+}
+
+// Called from the Stripe webhook once a Checkout Session actually completes.
+// The amount paid becomes the recorded deposit, so the one "deposit paid"
+// figure on the booking always reflects money actually received.
+export async function markPaidViaStripe(id: number, amountPaid: number): Promise<void> {
+  await sql`UPDATE bookings SET paid_at = now(), deposit_amount = ${amountPaid} WHERE id = ${id}`
 }

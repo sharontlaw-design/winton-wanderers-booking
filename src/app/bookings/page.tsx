@@ -53,7 +53,10 @@ export default async function BookingsPage() {
                   <td className="px-4 py-2">{b.site_number ?? '—'}</td>
                   <td className="px-4 py-2">{b.check_in}</td>
                   <td className="px-4 py-2">{b.check_out}</td>
-                  <td className="px-4 py-2">${Number(b.deposit_amount).toFixed(2)}</td>
+                  <td className="px-4 py-2">
+                    ${Number(b.deposit_amount).toFixed(2)}
+                    {b.paid_at && <span className="text-emerald-700 text-xs ml-1" title={`Paid online ${new Date(b.paid_at).toLocaleString()}`}>✓ online</span>}
+                  </td>
                   <td className="px-4 py-2">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLOR[b.status]}`}>
                       {STATUS_LABEL[b.status]}
